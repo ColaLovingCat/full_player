@@ -1,0 +1,8 @@
+build
+cache
+dist
+venv
+*.spec
+*/__pycache__/*
+
+music_cache.db
