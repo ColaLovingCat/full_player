@@ -7,10 +7,11 @@ export interface Song {
   artist: string;
   album: string;
   duration: number;
-  path: string; // 对应后端的 file_path
-  albumCover: string; // Base64
-  artistPhoto: string; // Base64
+  path: string;
+  albumCover: string;
+  artistPhoto: string;
   lyricsPath: string;
+  isFavorite: boolean;
 }
 
 export interface Album {
@@ -22,21 +23,16 @@ export interface Album {
 }
 
 export const musicService = {
-  /**
-   * 手动触发扫描音乐库
-   * @param path 要扫描的绝对或相对路径，如果不传，后端默认扫描 './libs'
-   * @returns 返回扫描结果 { status: "success", count: number }
-   */
+  // 手动触发扫描音乐库
   async triggerScan(path?: string): Promise<{ status: string; count: number }> {
     try {
-      // 构造请求参数，如果传入了 path 则带上
       const params = path ? { path } : {};
 
       const response = await axios.get(`${API_BASE}/system/scan`, { params });
       return response.data;
     } catch (error) {
       console.error("扫描音乐库失败:", error);
-      throw error; // 将错误抛出，以便在 UI 层显示错误提示（如 Toast）
+      throw error;
     }
   },
 
@@ -44,7 +40,9 @@ export const musicService = {
   async getAlbumsWithSongs(): Promise<Album[]> {
     const res = await axios.get(`${API_BASE}/songs/getList`);
     const allSongs: any[] = res.data.songs;
+
     const albumMap = new Map<string, Album>();
+    const favoriteSongs: Song[] = [];
 
     allSongs.forEach((s) => {
       const key = `${s.album}-${s.artist}`;
@@ -67,9 +65,27 @@ export const musicService = {
         albumCover: s.album_cover,
         artistPhoto: s.artist_photo,
         lyricsPath: s.lyrics_path,
+        isFavorite: s.isFavorite,
       });
+
+      if (s.isFavorite) {
+        favoriteSongs.push(s);
+      }
     });
-    return Array.from(albumMap.values());
+
+    const standardAlbums = Array.from(albumMap.values());
+    const favAlbum = {
+      name: "我的最爱",
+      artist: "My Favorites",
+      cover:
+        favoriteSongs.length > 0
+          ? favoriteSongs[0].albumCover
+          : "/default-heart-cover.png",
+      artistPhoto: "",
+      songs: favoriteSongs,
+    };
+
+    return [favAlbum, ...standardAlbums];
   },
 
   // 获取解析后的歌词
@@ -77,11 +93,19 @@ export const musicService = {
     const res = await axios.get(`${API_BASE}/songs/getLyrics`, {
       params: { lyrics_path: path },
     });
-    return res.data.lyrics; // [{time: 12.3, text: '...'}, ...]
+    return res.data.lyrics;
   },
 
   // 获取播放地址
   getAudioUrl(path: string) {
     return `${API_BASE}/songs/getFile?song_path=${encodeURIComponent(path)}`;
+  },
+
+  // 喜爱
+  async toggleFavorite(songId: number) {
+    const res = await axios.post(
+      `${API_BASE}/songs/toggleFavorite?song_id=${songId}`,
+    );
+    return res.data.isFavorite;
   },
 };

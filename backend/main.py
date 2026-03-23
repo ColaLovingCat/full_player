@@ -103,7 +103,7 @@ async def scan_endpoint(path: str = "./libs"):
                 if not lrc.exists():
                     lrc = file.with_suffix(".txt")
 
-                filename = file.stem 
+                filename = file.stem
                 real_title = get_music_title(str(file), filename)
 
                 try:
@@ -151,6 +151,7 @@ async def get_list():
                 "album_cover": to_base64(row["album_cover_path"]),
                 "artist_photo": to_base64(row["artist_photo_path"]),
                 "lyrics_path": row["lyrics_path"],
+                "isFavorite": bool(row["is_favorite"]),
             }
         )
     return {"songs": result}
@@ -172,6 +173,15 @@ async def get_lyrics(lyrics_path: str):
         # 如果解析为空，尝试返回纯文本或错误
         return {"lyrics": [], "raw": "No lyrics found"}
     return {"lyrics": data}
+
+
+@app.post("/songs/toggleFavorite")
+async def toggle_favorite(song_id: int):
+    """前端点击红心时调用"""
+    from core.database import toggle_favorite_in_db
+
+    new_status = toggle_favorite_in_db(song_id)
+    return {"status": "success", "isFavorite": new_status}
 
 
 if __name__ == "__main__":

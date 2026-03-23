@@ -32,6 +32,7 @@
   padding: 0 100px;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-behavior: smooth;
 
   /* 极大透视点，保证平行无变形 */
   perspective: 3000px;
@@ -187,6 +188,8 @@
     background: unset;
 
     &.btn-play {
+      width: 40px;
+      height: 40px;
     }
   }
 }
@@ -373,6 +376,18 @@
           transform: scale(1.1);
         }
       }
+    }
+  }
+
+  .heart-icon {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    &.is-liked {
+      transform: scale(1.15);
+    }
+    &:hover {
+      transform: scale(1.2);
     }
   }
 
